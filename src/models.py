@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 class SolarPowerData(BaseModel):
-    date_time: str
+    date_time: datetime
     plant_id: int 
     source_key_power: str
     source_key_sensor: str

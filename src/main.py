@@ -9,6 +9,7 @@ import itertools
 from pydantic import BaseModel
 import os
 import datetime
+import sklearn
 from models import SolarPowerData
 from loguru import logger
 
