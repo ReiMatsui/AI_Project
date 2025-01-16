@@ -6,6 +6,7 @@ from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from src.lstm import train_solar_power_prediction, prepare_data
+from src.process_data import merge_data_1
 
 def plot_training_history(history):
     """学習履歴をプロットする関数"""
@@ -71,20 +72,22 @@ def main():
     epochs = st.sidebar.slider('学習エポック数', 10, 100, 50, 10)
     
     # データのアップロード
-    uploaded_file = st.file_uploader("CSVファイルをアップロード", type=['csv'])
+    uploaded_file = st.file_uploader("genファイルをアップロード", type=['csv'])
+    uploaded_file2 = st.file_uploader("senファイルをアップロード", type=['csv'])
     
-    if uploaded_file is not None:
+    if (uploaded_file is not None) and (uploaded_file2 is not None):
         # データの読み込みと前処理
         df = pd.read_csv(uploaded_file)
-        df.index = pd.to_datetime(df['TIMESTAMP']) if 'TIMESTAMP' in df.columns else pd.date_range(start='2024-01-01', periods=len(df), freq='15T')
+        df2 = pd.read_csv(uploaded_file2)
+        merged_df = merge_data_1(df, df2)
         
         st.subheader('データプレビュー')
-        st.dataframe(df.head())
+        st.dataframe(merged_df.head())
         
         if st.button('モデルを学習'):
             with st.spinner('モデルを学習中...'):
                 # モデルの学習
-                model, scaler, history = train_solar_power_prediction(
+                model, scaler, history, evaluation = train_solar_power_prediction(
                     df, 
                     sequence_length=sequence_length,
                     test_size=test_size,
@@ -97,13 +100,22 @@ def main():
                 st.plotly_chart(history_fig)
                 
                 # テストデータでの予測
-                X, y, _ = prepare_data(df, sequence_length=sequence_length)
+                X, y, _, features = prepare_data(df, sequence_length=sequence_length)
                 train_size = int(len(X) * (1 - test_size))
                 X_test = X[train_size:]
                 y_test = y[train_size:]
                 
                 # 予測の実行
                 y_pred = model.predict(X_test)
+                
+                # スケールを戻す
+                y_pred = scaler.inverse_transform(
+                    np.concatenate([y_pred, np.zeros((len(y_pred), 0))], axis=1)
+                )[:, 0]
+                
+                y_test = scaler.inverse_transform(
+                    np.concatenate([y_test.reshape(-1, 1), np.zeros((len(y_test), 0))], axis=1)
+                )[:, 0]
                 
                 # 予測結果のプロット
                 st.subheader('予測結果')
