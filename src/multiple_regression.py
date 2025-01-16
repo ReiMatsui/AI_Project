@@ -10,32 +10,11 @@ import warnings
 import itertools
 from pydantic import BaseModel
 import os
-from datetime import datetime, timedelta
 import sklearn
 from models import SolarPowerData
 from loguru import logger
 import streamlit as st
 
-def process_data(data):
-    # データのフィルタリング
-    logger.info(f"データ数: {data.shape[0]}")
-
-    filtered_data = data[
-        (data['DC_POWER'] > 0) & (data['IRRADIATION'] > 0)
-    ]
-    st.info(f"データ数（条件適用後）: {filtered_data.shape[0]}")
-    
-    # 直近30日分のデータを選択
-    last_date = filtered_data['DATE_TIME'].max()
-    start_date = last_date - timedelta(days=30)
-    recent_data = filtered_data[
-        (filtered_data['DATE_TIME'] >= start_date) & 
-        (filtered_data['DATE_TIME'] <= last_date)
-    ]
-    st.info(f"データ数（直近30日分）: {recent_data.shape[0]}")
-    logger.info(recent_data[['DC_POWER', 'IRRADIATION', 'MODULE_TEMPERATURE']])
-    return recent_data
-        
 def fit_model(data):
     # 説明変数と目的変数
     X = data[['IRRADIATION', 'MODULE_TEMPERATURE']]
@@ -52,8 +31,10 @@ def fit_model(data):
     # モデルの評価
     y_pred = model.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_true=y_test, y_pred=y_pred)
     
     st.info(f"Initial Model - MSE: {mse}")
+    st.info(f"R2:{r2}")
     st.info(f"Coefficients (w1, w2): {model.coef_}")
     st.info(f"Intercept (b): {model.intercept_}")
     
@@ -72,68 +53,30 @@ def exclude_outliers(data, model: LinearRegression, mse):
     residuals = (y - y_pred) ** 2
 
     inliers = residuals < threshold
+    outliers = residuals >= threshold
     
     st.info(f"外れ値の数: {(~inliers).sum()}")
     st.info(f"外れ値を除外したデータ数: {inliers.sum()}")
     
     filtered_data = data[inliers]
-    return filtered_data
+    outlier_data = data[outliers]
     
-def merge_data_1(gen_data, sen_data):
-    # 日付フォーマットを統一
-    gen_data['DATE_TIME'] = pd.to_datetime(gen_data['DATE_TIME'], format='%d-%m-%Y %H:%M')
-    sen_data['DATE_TIME'] = pd.to_datetime(sen_data['DATE_TIME'], format='%Y-%m-%d %H:%M:%S')
-
-    # データの結合
-    merged_data = pd.merge(
-        gen_data, sen_data,
-        on=['DATE_TIME', 'PLANT_ID'],
-        how='inner'
-    )
-    st.info(f"元データの数 (結合後): {merged_data.shape[0]}")
-    return merged_data
-
-def merge_data_2(gen_data, sen_data):
-    # 日付フォーマットを統一
-    gen_data['DATE_TIME'] = pd.to_datetime(gen_data['DATE_TIME'], format='%Y-%m-%d %H:%M:%S')
-    sen_data['DATE_TIME'] = pd.to_datetime(sen_data['DATE_TIME'], format='%Y-%m-%d %H:%M:%S')
-
-    # データの結合
-    merged_data = pd.merge(
-        gen_data, sen_data,
-        on=['DATE_TIME', 'PLANT_ID'],
-        how='inner'
-    )
-    logger.info(f"元データの数 (結合後): {merged_data.shape[0]}")
-    return merged_data
-
-def evaluate_model(model, merged_data):    
-    # 条件を満たすデータをフィルタリング
-    filtered_data = merged_data[
-        (merged_data['DC_POWER'] > 0) & (merged_data['IRRADIATION'] > 0)
-    ]
-    logger.info(f"評価データ数（条件適用後）: {filtered_data.shape[0]}")
-
-    # 直近30日分のデータを選択
-    last_date = filtered_data['DATE_TIME'].max()
-    start_date = last_date - timedelta(days=30)
-    recent_data = filtered_data[
-        (filtered_data['DATE_TIME'] >= start_date) & 
-        (filtered_data['DATE_TIME'] <= last_date)
-    ]
-    logger.info(f"評価用データ数（直近30日分）: {recent_data.shape[0]}")
-    logger.info(recent_data[['DC_POWER', 'IRRADIATION', 'MODULE_TEMPERATURE']])
+    return filtered_data, outlier_data
     
+def evaluate_model(model, data):    
     # 説明変数と目的変数
-    X = recent_data[['IRRADIATION', 'MODULE_TEMPERATURE']]
-    y = recent_data['DC_POWER']
+    X = data[['IRRADIATION', 'MODULE_TEMPERATURE']]
+    y = data['DC_POWER']
     st.info(f"評価用データ数は{X.shape[0]}です")
     # モデルを使って予測
     y_pred = model.predict(X)
 
     # 評価指標の計算 (MSE)
     mse = mean_squared_error(y, y_pred)
+    r2 = r2_score(y_true=y, y_pred=y_pred)
     st.info(f"MSE:{mse}")
+    st.info(f"R2:{r2}")
+    
     logger.info(f"評価結果 (Plant 2): MSE = {mse}")
 
     plt.figure(figsize=(10, 6))

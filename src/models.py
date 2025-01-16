@@ -14,5 +14,3 @@ class SolarPowerData(BaseModel):
     ambient_temperature: Optional[float]
     module_temperature: Optional[float]
     irradiation: Optional[float]
-    
-    

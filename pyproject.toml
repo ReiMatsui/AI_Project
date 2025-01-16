@@ -6,8 +6,8 @@ authors = ["ReiMatsui-muilab <rei.matsui@muilab.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
-numpy = "^2.2.0"
+python = "^3.10"
+numpy = "<=2.2.0"
 pandas = "^2.2.3"
 matplotlib = "^3.9.3"
 seaborn = "^0.13.2"
@@ -16,6 +16,10 @@ pydantic = "^2.10.3"
 loguru = "^0.7.3"
 scikit-learn = "^1.6.0"
 streamlit = "^1.41.1"
+plotly = "^5.24.1"
+tensorflow = "<=2.18.0"
+tensorflow-metal = "^1.1.0"
+tensorflow-macos = "^2.16.2"
 
 
 [build-system]
