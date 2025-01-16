@@ -5,8 +5,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from src.lstm import train_solar_power_prediction, prepare_data
+from lstm.lstm import train_solar_power_prediction, prepare_data
 from src.process_data import merge_data_1
+from loguru import logger
 
 def plot_training_history(history):
     """学習履歴をプロットする関数"""
@@ -119,6 +120,7 @@ def main():
                 
                 # 予測結果のプロット
                 st.subheader('予測結果')
+                logger.info(df.index)
                 dates = df.index[train_size + sequence_length:train_size + sequence_length + len(y_test)]
                 pred_fig = plot_predictions(y_test, y_pred.flatten(), dates)
                 st.plotly_chart(pred_fig)

@@ -6,7 +6,7 @@ from loguru import logger
 import plotly.graph_objects as go
 import streamlit as st
 import pandas as pd
-from src.multiple_regression import fit_model, evaluate_model, exclude_outliers
+from multiple_regression.multiple_regression import fit_model, evaluate_model, exclude_outliers
 from src.process_data import process_data, merge_data_1, merge_data_2
 
 def main():

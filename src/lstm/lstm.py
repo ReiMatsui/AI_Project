@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.models import Sequential # type: ignore
+from tensorflow.keras.layers import LSTM, Dense, Dropout # type: ignore
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from loguru import logger
@@ -13,7 +13,7 @@ def prepare_data(df, target_col='DC_POWER', sequence_length=96):
     sequence_length=96 は 15分×96 = 24時間分のデータを使用
     """
     # DATE_TIMEの処理
-    df['DATE_TIME'] = pd.to_datetime(df['DATE_TIME'], format='%d-%m-%Y %H:%M')
+    df['DATE_TIME'] = pd.to_datetime(df['DATE_TIME'], format='%Y-%m-%d %H:%M:%S')
     df = df.set_index('DATE_TIME')
     
     # 重複インデックスの処理
@@ -36,8 +36,7 @@ def prepare_data(df, target_col='DC_POWER', sequence_length=96):
         X.append(scaled_df.iloc[i:(i + sequence_length)].values)
         y.append(scaled_df.iloc[i + sequence_length][features.index(target_col)])
     
-    logger.info(np.array(X))
-    logger.info(np.array(y))
+    logger.info(df)
     
     return np.array(X), np.array(y), scaler, df[features]
 
