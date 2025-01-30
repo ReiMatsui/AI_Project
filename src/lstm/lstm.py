@@ -45,11 +45,11 @@ def create_lstm_model(input_shape, dropout_rate=0.2):
     LSTMモデルの構築
     """
     model = Sequential([
-        LSTM(units=64, return_sequences=True, input_shape=input_shape),
+        LSTM(units=96, return_sequences=True, input_shape=input_shape),
         Dropout(dropout_rate),
-        LSTM(units=32, return_sequences=False),
+        LSTM(units=64, return_sequences=False),
         Dropout(dropout_rate),
-        Dense(units=16, activation='relu'),
+        Dense(units=16, activation='gelu'),
         Dense(units=1)
     ])
     

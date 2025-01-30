@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from lstm.lstm import train_solar_power_prediction, prepare_data
+from src.lstm.lstm import train_solar_power_prediction, prepare_data
 from src.process_data import merge_data_1
 from loguru import logger
 
